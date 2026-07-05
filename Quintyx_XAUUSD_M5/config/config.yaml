@@ -1,0 +1,8 @@
+symbol: XAUUSD
+timeframe: M5
+bars: 500000
+
+risk_reward: 2.0
+atr_multiplier: 1.5
+confidence_threshold: 70
+random_seed: 42
