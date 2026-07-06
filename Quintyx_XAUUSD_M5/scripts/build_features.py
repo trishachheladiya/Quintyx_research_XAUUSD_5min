@@ -17,82 +17,107 @@ print("=" * 60)
 print("QUINTYX FEATURE ENGINEERING")
 print("=" * 60)
 
-# -----------------------------
-# EMA
-# -----------------------------
+# =============================
+# Trend Strength
+# =============================
 
-df["ema20"] = ta.trend.EMAIndicator(df["close"], window=20).ema_indicator()
-df["ema50"] = ta.trend.EMAIndicator(df["close"], window=50).ema_indicator()
-df["ema200"] = ta.trend.EMAIndicator(df["close"], window=200).ema_indicator()
-
-# -----------------------------
-# RSI
-# -----------------------------
-
-df["rsi14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
-
-# -----------------------------
-# ATR
-# -----------------------------
-
-df["atr14"] = ta.volatility.AverageTrueRange(
-    df["high"],
-    df["low"],
-    df["close"],
+adx = ta.trend.ADXIndicator(
+    high=df["high"],
+    low=df["low"],
+    close=df["close"],
     window=14,
-).average_true_range()
+)
 
-# -----------------------------
-# Distance from EMA
-# -----------------------------
+df["adx14"] = adx.adx()
+df["plus_di"] = adx.adx_pos()
+df["minus_di"] = adx.adx_neg()
 
-df["dist_ema20"] = df["close"] - df["ema20"]
-df["dist_ema50"] = df["close"] - df["ema50"]
-df["dist_ema200"] = df["close"] - df["ema200"]
+# =============================
+# MACD
+# =============================
 
-# -----------------------------
-# EMA Slopes
-# -----------------------------
+macd = ta.trend.MACD(df["close"])
 
-df["ema20_slope"] = df["ema20"].diff()
-df["ema50_slope"] = df["ema50"].diff()
-df["ema200_slope"] = df["ema200"].diff()
+df["macd"] = macd.macd()
+df["macd_signal"] = macd.macd_signal()
+df["macd_hist"] = macd.macd_diff()
 
-# -----------------------------
-# Returns
-# -----------------------------
+# =============================
+# Bollinger Bands
+# =============================
 
-df["ret1"] = df["close"].pct_change(1)
-df["ret3"] = df["close"].pct_change(3)
-df["ret5"] = df["close"].pct_change(5)
-df["ret10"] = df["close"].pct_change(10)
+bb = ta.volatility.BollingerBands(df["close"], window=20)
 
-# -----------------------------
-# Volatility
-# -----------------------------
+df["bb_upper"] = bb.bollinger_hband()
+df["bb_lower"] = bb.bollinger_lband()
+df["bb_width"] = bb.bollinger_wband()
 
-df["volatility20"] = df["close"].rolling(20).std()
+# =============================
+# Stochastic
+# =============================
 
-# -----------------------------
-# Time Features
-# -----------------------------
+stoch = ta.momentum.StochasticOscillator(
+    high=df["high"],
+    low=df["low"],
+    close=df["close"]
+)
 
-df["hour"] = df["datetime"].dt.hour
-df["day_of_week"] = df["datetime"].dt.dayofweek
+df["stoch_k"] = stoch.stoch()
+df["stoch_d"] = stoch.stoch_signal()
 
-# -----------------------------
-# NEW FEATURES (Upgrade)
-# -----------------------------
+# =============================
+# Momentum
+# =============================
 
-df["body"] = abs(df["close"] - df["open"])
-df["upper_wick"] = df["high"] - df[["open", "close"]].max(axis=1)
-df["lower_wick"] = df[["open", "close"]].min(axis=1) - df["low"]
+df["roc10"] = ta.momentum.ROCIndicator(
+    df["close"],
+    window=10
+).roc()
 
-# Session
-df["session"] = 0
-df.loc[(df["hour"] >= 0) & (df["hour"] < 8), "session"] = 1
-df.loc[(df["hour"] >= 8) & (df["hour"] < 16), "session"] = 2
-df.loc[(df["hour"] >= 16), "session"] = 3
+# =============================
+# ATR Percentage
+# =============================
+
+df["atr_percent"] = df["atr14"] / df["close"]
+
+# =============================
+# Candle Range
+# =============================
+
+df["range"] = df["high"] - df["low"]
+
+df["body_percent"] = (
+    df["body"] /
+    df["range"].replace(0, 1e-9)
+)
+
+# =============================
+# Previous Candle
+# =============================
+
+df["prev_high"] = df["high"].shift(1)
+df["prev_low"] = df["low"].shift(1)
+df["prev_close"] = df["close"].shift(1)
+
+# =============================
+# Rolling Statistics
+# =============================
+
+df["rolling_high20"] = df["high"].rolling(20).max()
+df["rolling_low20"] = df["low"].rolling(20).min()
+
+df["rolling_mean20"] = df["close"].rolling(20).mean()
+
+# =============================
+# Volume
+# =============================
+
+df["volume_ma20"] = df["tick_volume"].rolling(20).mean()
+
+df["volume_ratio"] = (
+    df["tick_volume"] /
+    df["volume_ma20"]
+)
 
 # -----------------------------
 # Remove NaNs
