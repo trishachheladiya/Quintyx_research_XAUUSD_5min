@@ -1,0 +1,10 @@
+pandas
+numpy
+MetaTrader5
+pyarrow
+ta
+scikit-learn
+xgboost
+joblib
+matplotlib
+pyyaml
